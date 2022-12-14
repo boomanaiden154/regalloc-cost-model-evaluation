@@ -1,0 +1,106 @@
+diff --git a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
+index 8896f056f4b0..514868e6133e 100644
+--- a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
++++ b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
+@@ -40,6 +40,9 @@
+ #include <array>
+ #include <memory>
+ 
++#include <cstdlib>
++#include <ctime>
++
+ using namespace llvm;
+ 
+ #define DEBUG_TYPE "ml-regalloc"
+@@ -70,6 +73,10 @@ static cl::opt<bool> EnableDevelopmentFeatures(
+     cl::desc("Whether or not to enable features under development for the ML "
+              "regalloc advisor"));
+ 
++static cl::opt<bool> RandomizeEvictionDecisions(
++    "regalloc-randomize-evictions", cl::Hidden,
++    cl::desc("Whether or not to randomize eviction decisions"));
++
+ #else
+ static const bool EnableDevelopmentFeatures = false;
+ #endif // #ifdef LLVM_HAVE_TFLITE
+@@ -759,10 +766,23 @@ MCRegister MLEvictAdvisor::tryFindEvictionCandidate(
+   }
+   *Runner->getTensor<float>(FeatureIDs::progress) =
+       static_cast<float>(RA.getQueueSize()) / InitialQSize;
++  
++  std::vector<int> EvictionPositions;
++  for(int I = 0; I < NumberOfInterferences; ++I) {
++    if(Regs[I].second) {
++      EvictionPositions.push_back(I);
++    }
++  }
+ 
+   // Get a decision.
+-  size_t CandidatePos = tryFindEvictionCandidatePosition(
+-      VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters);
++  size_t CandidatePos = 32;
++  if(RandomizeEvictionDecisions) {
++    srand(time(NULL));
++    CandidatePos = EvictionPositions[rand() % EvictionPositions.size()];
++  } else {
++    CandidatePos = tryFindEvictionCandidatePosition(
++      VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters); 
++  }
+   // The contract with the ML side is that CandidatePos is mask == 1 (i.e.
+   // Regs[CandidatePos].second)
+   assert(Regs[CandidatePos].second);
+diff --git a/llvm/lib/CodeGen/RegAllocScore.cpp b/llvm/lib/CodeGen/RegAllocScore.cpp
+index e420283dfcfa..d9ede0705ee3 100644
+--- a/llvm/lib/CodeGen/RegAllocScore.cpp
++++ b/llvm/lib/CodeGen/RegAllocScore.cpp
+@@ -24,6 +24,7 @@
+ #include "llvm/CodeGen/TargetSubtargetInfo.h"
+ #include "llvm/MC/MCInstrDesc.h"
+ #include "llvm/Support/CommandLine.h"
++#include "llvm/Support/Debug.h"
+ 
+ using namespace llvm;
+ cl::opt<double> CopyWeight("regalloc-copy-weight", cl::init(0.2), cl::Hidden);
+@@ -78,6 +79,9 @@ llvm::calculateRegAllocScore(const MachineFunction &MF,
+       [&](const MachineBasicBlock &MBB) {
+         return MBFI.getBlockFreqRelativeToEntryBlock(&MBB);
+       },
++      [&]() {
++        return MBFI.getEntryFreq();
++      },
+       [&](const MachineInstr &MI) {
+         return MF.getSubtarget().getInstrInfo()->isTriviallyReMaterializable(
+             MI);
+@@ -87,6 +91,7 @@ llvm::calculateRegAllocScore(const MachineFunction &MF,
+ RegAllocScore llvm::calculateRegAllocScore(
+     const MachineFunction &MF,
+     llvm::function_ref<double(const MachineBasicBlock &)> GetBBFreq,
++    llvm::function_ref<uint64_t()> GetEntryCount,
+     llvm::function_ref<bool(const MachineInstr &)>
+         IsTriviallyRematerializable) {
+   RegAllocScore Total;
+@@ -117,5 +122,12 @@ RegAllocScore llvm::calculateRegAllocScore(
+     }
+     Total += MBBScore;
+   }
++  DEBUG_WITH_TYPE("regallocscore", dbgs() << GetEntryCount() << ","
++                                                << Total.copyCounts() << ","
++                                                << Total.loadCounts() << ","
++                                                << Total.storeCounts() << ","
++                                                << Total.loadStoreCounts() << ","
++                                                << Total.expensiveRematCounts() << ","
++                                                << Total.cheapRematCounts() << "\n");
+   return Total;
+ }
+diff --git a/llvm/lib/CodeGen/RegAllocScore.h b/llvm/lib/CodeGen/RegAllocScore.h
+index b80adae29f23..b6eb555aa177 100644
+--- a/llvm/lib/CodeGen/RegAllocScore.h
++++ b/llvm/lib/CodeGen/RegAllocScore.h
+@@ -67,6 +67,7 @@ RegAllocScore calculateRegAllocScore(const MachineFunction &MF,
+ RegAllocScore calculateRegAllocScore(
+     const MachineFunction &MF,
+     llvm::function_ref<double(const MachineBasicBlock &)> GetBBFreq,
++    llvm::function_ref<uint64_t()> GetEntryCount,
+     llvm::function_ref<bool(const MachineInstr &)> IsTriviallyRematerializable);
+ } // end namespace llvm
+ 
