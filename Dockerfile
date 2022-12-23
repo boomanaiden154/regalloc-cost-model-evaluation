@@ -56,6 +56,7 @@ WORKDIR /
 RUN apt-get update && apt-get install -y libunwind-dev libgflags-dev libssl-dev libelf-dev protobuf-compiler
 RUN git clone --recursive https://github.com/google/autofdo
 WORKDIR /autofdo
+RUN git checkout 2c1e143d2a7c8545d5f1b7c625d9cde7fcb0db65
 COPY ./patches/autofdo-std-optional.patch .
 RUN git apply autofdo-std-optional.patch
 RUN mkdir -p /autofdo/build
