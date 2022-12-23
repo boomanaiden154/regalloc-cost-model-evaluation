@@ -67,5 +67,11 @@ RUN cmake -G Ninja \
     -DLLVM_PATH=/llvm-install \
     ../
 RUN cmake --build .
+WORKDIR /
+RUN apt-get update && apt-get install -y flex bison
+RUN git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+WORKDIR /linux/tools/perf
+RUN make
+RUN cp perf /usr/bin
 COPY . /regalloc-testing
 WORKDIR /
