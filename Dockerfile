@@ -12,9 +12,12 @@ RUN cmake -G Ninja \
     -DLLVM_ENABLE_PROJECTS="clang;lld" \
     -DLLVM_ENABLE_RUNTIMES="compiler-rt" \
     -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DCMAKE_INSTALL_PREFIX=/llvm-install \
     -C /tflite/tflite.cmake \
     ../llvm
 RUN cmake --build .
+RUN cmake --build . --target install
 RUN mkdir /llvm-corpus
 WORKDIR /llvm-corpus
 RUN cmake -G Ninja \
@@ -49,4 +52,19 @@ RUN PYTHONPATH=$PYTHONPATH:. python3 compiler_opt/rl/train_bc.py \
     --root_dir=/warmstart \
     --data_path=/default_trace \
     --gin_files=compiler_opt/rl/regalloc/gin_configs/behavioral_cloning_nn_agent.gin
+WORKDIR /
+RUN apt-get update && apt-get install -y libunwind-dev libgflags-dev libssl-dev libelf-dev protobuf-compiler
+RUN git clone --recursive https://github.com/google/autofdo
+WORKDIR /autofdo
+COPY ./patches/autofdo-std-optional.patch .
+RUN git apply autofdo-std-optional.patch
+RUN mkdir -p /autofdo/build
+WORKDIR /autofdo/build
+RUN cmake -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=. \
+    -DLLVM_PATH=/llvm-install \
+    ../
+RUN cmake --build .
 COPY . /regalloc-testing
+WORKDIR /
