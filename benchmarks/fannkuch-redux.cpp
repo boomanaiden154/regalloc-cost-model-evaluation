@@ -135,7 +135,7 @@ inline int64_t Permutation::countFlips() const
 
 int main(int argc, char **argv)
 {
-    const auto n = atoi(11);
+    const auto n = 11;
 
     // Compute some factorials for later use.
     initializeFact(n);

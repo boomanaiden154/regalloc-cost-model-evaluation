@@ -1,12 +1,18 @@
 set -x
-/llvm-project/build/bin/clang $1 -o $2-instrumented -O3 \
+if [[ ${1:(-3)} == cpp ]]
+then
+    compiler=/llvm-project/build/bin/clang++
+else
+    compiler=/llvm-project/build/bin/clang
+fi
+$compiler $1 -o $2-instrumented -O3 \
     -fprofile-instr-generate \
     -mllvm -regalloc-enable-advisor=development \
     -mllvm -regalloc-model=$3 \
     -mllvm -regalloc-training-log=./log
 ./$2-instrumented
 /llvm-project/build/bin/llvm-profdata merge --output prof.data default.profraw
-/llvm-project/build/bin/clang $1 -o $2 -O3 \
+$compiler $1 -o $2 -O3 \
     -fprofile-instr-use=./prof.data \
     -mllvm -regalloc-enable-advisor=development \
     -mllvm -regalloc-model=$3 \
