@@ -57,8 +57,8 @@ RUN apt-get update && apt-get install -y libunwind-dev libgflags-dev libssl-dev 
 RUN git clone --recursive https://github.com/google/autofdo
 WORKDIR /autofdo
 RUN git checkout 2c1e143d2a7c8545d5f1b7c625d9cde7fcb0db65
-COPY ./patches/autofdo-std-optional.patch .
-RUN git apply autofdo-std-optional.patch
+COPY ./patches/autofdo-* ./
+RUN git apply autofdo-*.patch
 RUN mkdir -p /autofdo/build
 WORKDIR /autofdo/build
 RUN cmake -G Ninja \
