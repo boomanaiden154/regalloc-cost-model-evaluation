@@ -75,3 +75,4 @@ RUN make
 RUN cp perf /usr/bin
 COPY . /regalloc-testing
 WORKDIR /
+RUN git clone https://github.com/andikleen/pmu-tools
