@@ -75,4 +75,5 @@ RUN make
 RUN cp perf /usr/bin
 COPY . /regalloc-testing
 WORKDIR /
+RUN apt-get update && apt-get install -y time
 RUN git clone https://github.com/andikleen/pmu-tools
