@@ -1,4 +1,6 @@
 set -e
+/llvm-project/build/bin/clang $1 -O3 -DCALL_COUNT_INSTRUMENTATION -o test-call-count
+./test-call-count > call-counts.txt
 for i in {1..31}
 do
     /regalloc-testing/scripts/pgo_compile.sh $1 test-$i /warmstart/saved_policy
