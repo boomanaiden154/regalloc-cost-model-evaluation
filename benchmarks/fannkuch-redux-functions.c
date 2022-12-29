@@ -5,7 +5,21 @@
 
 static int64_t fact[32];
 
+#ifdef CALL_COUNT_INSTRUMENTATION
+static int64_t initializeFactCalls = 0;
+static int64_t rotateCalls = 0;
+static int64_t createPermutationCalls = 0;
+static int64_t permutationAdvanceCalls = 0;
+static int64_t swapCalls = 0;
+static int64_t permutationCountFlipsCalls = 0;
+static int64_t mainCalls = 1;
+#endif
+
+__attribute__((noinline))
 void initializeFact(int n) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+    ++initializeFactCalls;
+#endif
     fact[0] = 1;
     for (int i = 1; i <= n; ++i) {
         fact[i] = i * fact[i - 1];
@@ -17,7 +31,11 @@ typedef struct {
     int8_t current[N];
 } Permutation;
 
+__attribute__((noinline))
 void rotate(int8_t* start, int8_t* middle, int8_t* end) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+    ++rotateCalls;
+#endif
     int finalData[end - start];
     // process the first part
     for(int i = 0; i < end - middle; ++i) {
@@ -33,14 +51,11 @@ void rotate(int8_t* start, int8_t* middle, int8_t* end) {
     }
 }
 
-void printArray(int8_t* array, uint32_t n) {
-    for(uint32_t i = 0; i < n; ++i) {
-        printf("%d,", array[i]);
-    }
-    printf("\n");
-}
-
+__attribute__((noinline))
 Permutation createPermutation(int n, int64_t start) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+    ++createPermutationCalls;
+#endif
     Permutation toReturn;
 
     for(int i = n - 1; i >= 0; --i) {
@@ -62,7 +77,11 @@ Permutation createPermutation(int n, int64_t start) {
     return toReturn;
 }
 
+__attribute__((noinline))
 void permutationAdvance(Permutation* input) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+    ++permutationAdvanceCalls;
+#endif
     for(int i = 1; ; ++i) {
         int8_t first = input->current[0];
         for(int j = 0; j < i; ++j) {
@@ -78,13 +97,21 @@ void permutationAdvance(Permutation* input) {
     }
 }
 
+__attribute__((noinline))
 void swap(int8_t* a, int8_t* b) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+    ++swapCalls;
+#endif
     int8_t temp = *a;
     *a = *b;
     *b = temp;
 }
 
+__attribute__((noinline))
 int64_t permutationCountFlips(Permutation* input) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+    ++permutationCountFlipsCalls;
+#endif
     int flips = 0;
     int8_t first = input->current[0];
 
@@ -157,8 +184,18 @@ int main() {
         }
     }
 
+#ifdef CALL_COUNT_INSTRUMENTATION
+    printf("initializeFact,%ld\n", initializeFactCalls);
+    printf("rotate,%ld\n", rotateCalls);
+    printf("createPermutation,%ld\n", createPermutationCalls);
+    printf("permutationAdvance,%ld\n", permutationAdvanceCalls);
+    printf("swap,%ld\n", swapCalls);
+    printf("permutationCountFlips,%ld\n", permutationCountFlipsCalls);
+    printf("main,%ld\n", mainCalls);
+#else
     printf("%ld\n", checksum);
     printf("Pfannkuchen(%d)=%ld\n", N, maxFlips);
+#endif
 
     return 0;
 }
