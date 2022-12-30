@@ -9,7 +9,8 @@ $compiler $1 -o $2-instrumented -O3 -lm \
     -fprofile-instr-generate \
     -mllvm -regalloc-enable-advisor=development \
     -mllvm -regalloc-model=$3 \
-    -mllvm -regalloc-training-log=./log
+    -mllvm -regalloc-training-log=./log \
+    $EXTRA_FLAGS
 ./$2-instrumented
 /llvm-project/build/bin/llvm-profdata merge --output prof.data default.profraw
 $compiler $1 -o $2 -O3 -lm \
@@ -18,7 +19,8 @@ $compiler $1 -o $2 -O3 -lm \
     -mllvm -regalloc-model=$3 \
     -mllvm -regalloc-training-log=./log \
     -mllvm -debug-only=regallocscore \
-    -mllvm -regalloc-randomize-evictions &> $2.regallocscoring.txt
+    -mllvm -regalloc-randomize-evictions \
+    $EXTRA_FLAGS &> $2.regallocscoring.txt
 sha1sum $2 >> checksums.txt
 rm prof.data
 rm default.profraw

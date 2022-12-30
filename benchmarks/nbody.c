@@ -94,7 +94,11 @@ static body solar_Bodies[]={
 // interactions between all the bodies, update each body's velocity based on
 // those interactions, and update each body's position by the distance it
 // travels in a timestep at it's updated velocity.
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
+#endif
 static void advance(body bodies[], int bodiesCount) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++advanceCalls;
@@ -198,7 +202,11 @@ static void advance(body bodies[], int bodiesCount) {
 // Calculate the momentum of each body and conserve momentum of the system by
 // adding to the Sun's velocity the appropriate opposite velocity needed in
 // order to offset that body's momentum.
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
+#endif
 static void offset_Momentum(body bodies[]){
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++offset_MomentumCalls;
@@ -211,7 +219,11 @@ static void offset_Momentum(body bodies[]){
 
 
 // Output the total energy of the system.
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
+#endif
 static void output_Energy(body bodies[]){
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++output_EnergyCalls;
