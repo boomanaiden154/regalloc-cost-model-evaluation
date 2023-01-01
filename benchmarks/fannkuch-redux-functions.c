@@ -15,8 +15,12 @@ static int64_t permutationCountFlipsCalls = 0;
 static int64_t mainCalls = 1;
 #endif
 
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
-void initializeFact(int n) {
+#endif
+static void initializeFact(int n) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++initializeFactCalls;
 #endif
@@ -31,8 +35,12 @@ typedef struct {
     int8_t current[N];
 } Permutation;
 
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
-void rotate(int8_t* start, int8_t* middle, int8_t* end) {
+#endif
+static void rotate(int8_t* start, int8_t* middle, int8_t* end) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++rotateCalls;
 #endif
@@ -51,8 +59,12 @@ void rotate(int8_t* start, int8_t* middle, int8_t* end) {
     }
 }
 
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
-Permutation createPermutation(int n, int64_t start) {
+#endif
+static Permutation createPermutation(int n, int64_t start) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++createPermutationCalls;
 #endif
@@ -77,8 +89,12 @@ Permutation createPermutation(int n, int64_t start) {
     return toReturn;
 }
 
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
-void permutationAdvance(Permutation* input) {
+#endif
+static void permutationAdvance(Permutation* input) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++permutationAdvanceCalls;
 #endif
@@ -97,8 +113,12 @@ void permutationAdvance(Permutation* input) {
     }
 }
 
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
-void swap(int8_t* a, int8_t* b) {
+#endif
+static void swap(int8_t* a, int8_t* b) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++swapCalls;
 #endif
@@ -107,8 +127,12 @@ void swap(int8_t* a, int8_t* b) {
     *b = temp;
 }
 
+#ifdef ALWAYS_INLINE
+__attribute__((always_inline))
+#else
 __attribute__((noinline))
-int64_t permutationCountFlips(Permutation* input) {
+#endif
+static int64_t permutationCountFlips(Permutation* input) {
 #ifdef CALL_COUNT_INSTRUMENTATION
     ++permutationCountFlipsCalls;
 #endif
