@@ -21,3 +21,6 @@ if __name__ == '__main__':
     regression.fit(X, y)
     print(regression.coef_)
     print(regression.score(X,y))
+    predictedValues = regression.predict(X)
+    for value in predictedValues:
+        print(value)
