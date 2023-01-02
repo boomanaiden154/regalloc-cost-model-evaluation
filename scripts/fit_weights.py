@@ -21,7 +21,14 @@ if __name__ == '__main__':
     y = df["time"] * 10 ** 9
     regression = linear_model.LinearRegression()
     regression.fit(X, y)
-    print(f"Multivariable regression coefficients:{regression.coef_}")
+    coefficients = regression.coef_
+    print(f"Multivariable regression coefficients:{coefficients}")
+    # normalize coefficients
+    normalizationFactor = 1 / coefficients[0]
+    normalizedCoefficients = []
+    for coefficient in coefficients:
+        normalizedCoefficients.append(coefficient * normalizationFactor)
+    print(f"Normalized coefficients:{normalizedCoefficients}")
     print(f"Unadjusted R^2 value:{regression.score(X,y)}")
     predictedValues = regression.predict(X)
     scoreTimePairs = []
