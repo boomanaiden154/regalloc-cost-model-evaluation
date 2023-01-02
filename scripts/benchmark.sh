@@ -1,4 +1,6 @@
+echo "working on benchmarking $1"
 for i in {1..30}
 do
-    /usr/bin/time -f'%E' $1 2>> $2
+    echo "benchmarking iteration $i/30 for $1"
+    { /usr/bin/time -f'%E' $1 >> /dev/null; } 2>> $2
 done
