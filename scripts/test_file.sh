@@ -1,7 +1,12 @@
 set -e
+count=31
+if [ -n "${2}" ]
+then
+    count=$2
+fi
 /llvm-project/build/bin/clang $1 -O3 -DCALL_COUNT_INSTRUMENTATION -o test-call-count
 ./test-call-count > call-counts.txt
-for i in {1..31}
+for (( i=1; i<=$count; i++ ))
 do
     /regalloc-testing/scripts/pgo_compile.sh $1 test-$i /warmstart/saved_policy
     /regalloc-testing/scripts/benchmark.sh ./test-$i test-$i.benchmark.txt
