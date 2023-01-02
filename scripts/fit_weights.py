@@ -10,6 +10,8 @@ import pandas
 
 from sklearn import linear_model
 
+from evaluate_no_weights import evaluateModel
+
 if __name__ == '__main__':
     if(len(sys.argv) != 2):
         print("Usage is python3 fit_weights.py <combined_regalloc_raw.sh>")
@@ -19,8 +21,14 @@ if __name__ == '__main__':
     y = df["time"] * 10 ** 9
     regression = linear_model.LinearRegression()
     regression.fit(X, y)
-    print(regression.coef_)
-    print(regression.score(X,y))
+    print(f"Multivariable regression coefficients:{regression.coef_}")
+    print(f"Unadjusted R^2 value:{regression.score(X,y)}")
     predictedValues = regression.predict(X)
-    for value in predictedValues:
-        print(value)
+    scoreTimePairs = []
+    for i in range(0,len(predictedValues)):
+        score = predictedValues[i]
+        time = df["time"][i]
+        scoreTimePairs.append((score,time))
+    newModelEvaluated = evaluateModel(scoreTimePairs)
+    print(f"Post regression polarity correct:{newModelEvaluated[0]}")
+    print(f"Post regression average difference:{newModelEvaluated[1]}")
