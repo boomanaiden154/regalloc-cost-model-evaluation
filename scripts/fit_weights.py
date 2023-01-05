@@ -23,6 +23,7 @@ if __name__ == '__main__':
     regression.fit(X, y)
     coefficients = regression.coef_
     print(f"Multivariable regression coefficients:{coefficients}")
+    print(f"Multivariable regression intercept:{regression.intercept_}")
     # normalize coefficients
     normalizationFactor = 1 / coefficients[0]
     normalizedCoefficients = []
