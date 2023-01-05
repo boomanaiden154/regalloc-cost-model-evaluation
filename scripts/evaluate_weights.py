@@ -9,18 +9,17 @@ import sys
 from evaluate_no_weights import evaluateModel
 
 if __name__ == '__main__':
-    if len(sys.argv) != 9:
+    if len(sys.argv) != 8:
         print("usage: python3 evaluate_weights.py <weights separated by spaces> \\")
         print("                                   <bias> \\")
         print("                                   <raw regalloc file> \\")
     copyWeight = float(sys.argv[1])
     loadWeight = float(sys.argv[2])
     storeWeight = float(sys.argv[3])
-    loadStoreWeight = float(sys.argv[4])
-    expensiveRematWeight = float(sys.argv[5])
-    cheapRematWeight = float(sys.argv[6])
-    bias = float(sys.argv[7])
-    rawRegallocFileName = sys.argv[8]
+    expensiveRematWeight = float(sys.argv[4])
+    cheapRematWeight = float(sys.argv[5])
+    bias = float(sys.argv[6])
+    rawRegallocFileName = sys.argv[7]
 
     scores = []
     times = []
@@ -37,7 +36,7 @@ if __name__ == '__main__':
             score = copyWeight * copyCount
             score += loadWeight * loadCount
             score += storeWeight * storeCount
-            score += loadStoreWeight * loadStoreCount
+            score += (loadWeight + storeWeight) * loadStoreCount
             score += expensiveRematWeight * expensiveRematCount
             score += cheapRematWeight * cheapRematCount
             score += bias

@@ -16,7 +16,10 @@ if __name__ == '__main__':
     if(len(sys.argv) != 2):
         print("Usage is python3 fit_weights.py <combined_regalloc_raw.sh>")
     df = pandas.read_csv(sys.argv[1], names=["copies","loads","stores","loadstores","expensiveremats","cheapremats","time"])
-    X = df[["copies","loads","stores","loadstores","expensiveremats","cheapremats"]]
+    X = df[["copies","loads","stores","expensiveremats","cheapremats"]]
+    # add loads and stores from loadStores
+    X = X.assign(loads=(X["loads"] + df["loadstores"]))
+    X = X.assign(stores=(X["stores"] + df["loadstores"]))
     # Scale the time so we don't get extremely small coefficients
     y = df["time"] * 10 ** 9
     regression = linear_model.LinearRegression()
