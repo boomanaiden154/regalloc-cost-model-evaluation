@@ -19,7 +19,7 @@ flags.DEFINE_string("input_file", None,
                     "The path to the input file (output from combined_regalloc_raw.sh")
 flags.DEFINE_enum("output", "default", ["default", "coefficients", "intercept",
                                         "cofint", "normcof", "r2", "posregpol",
-                                        "posregdif"],
+                                        "posregdif", "cofintnolbr"],
                   "The output type to use")
 
 flags.mark_flag_as_required("input_file")
@@ -62,6 +62,8 @@ def main(_):
     elif FLAGS.output == "cofint":
         print(f"{coefficients[0]} {coefficients[1]} {coefficients[2]} {coefficients[3]} {coefficients[4]}")
         print(f"{regression.intercept_}")
+    elif FLAGS.output == "cofintnolbr":
+        print(f"{coefficients[0]} {coefficients[1]} {coefficients[2]} {coefficients[3]} {coefficients[4]} {regression.intercept_}")
     elif FLAGS.output == "normcof":
         print((f"{normalizedCoefficients[0]} {normalizedCoefficients[1]}"
                f"{normalizedCoefficients[2]} {normalizedCoefficients[3]}"

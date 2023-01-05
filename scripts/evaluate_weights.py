@@ -8,19 +8,13 @@ import sys
 
 from evaluate_no_weights import evaluateModel
 
-if __name__ == '__main__':
-    if len(sys.argv) != 8:
-        print("usage: python3 evaluate_weights.py <weights separated by spaces> \\")
-        print("                                   <bias> \\")
-        print("                                   <raw regalloc file> \\")
-    copyWeight = float(sys.argv[1])
-    loadWeight = float(sys.argv[2])
-    storeWeight = float(sys.argv[3])
-    expensiveRematWeight = float(sys.argv[4])
-    cheapRematWeight = float(sys.argv[5])
-    bias = float(sys.argv[6])
-    rawRegallocFileName = sys.argv[7]
-
+def evaluateWithWeights(copyWeight,
+                        loadWeight,
+                        storeWeight,
+                        expensiveRematWeight,
+                        cheapRematWeight,
+                        intercept,
+                        rawRegallocFileName): 
     scores = []
     times = []
     with open(rawRegallocFileName) as rawRegallocFile:
@@ -39,13 +33,37 @@ if __name__ == '__main__':
             score += (loadWeight + storeWeight) * loadStoreCount
             score += expensiveRematWeight * expensiveRematCount
             score += cheapRematWeight * cheapRematCount
-            score += bias
+            score += intercept
             time = float(components[6])
             scores.append(score)
             times.append(time)
     scoreTimePairs = []
     for score, time in zip(scores, times):
         scoreTimePairs.append((score,time))
-    polarityCorrect, averageDifference = evaluateModel(scoreTimePairs)
-    print(f"polarity correct:{polarityCorrect}/{len(scores) - 1}")
+    return evaluateModel(scoreTimePairs) + (len(scoreTimePairs),)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 8:
+        print("usage: python3 evaluate_weights.py <weights separated by spaces> \\")
+        print("                                   <bias> \\")
+        print("                                   <raw regalloc file> \\")
+    copyWeight = float(sys.argv[1])
+    loadWeight = float(sys.argv[2])
+    storeWeight = float(sys.argv[3])
+    expensiveRematWeight = float(sys.argv[4])
+    cheapRematWeight = float(sys.argv[5])
+    bias = float(sys.argv[6])
+    rawRegallocFileName = sys.argv[7]
+
+    outputTuple = evaluateWithWeights(copyWeight,
+                                      loadWeight,
+                                      storeWeight,
+                                      expensiveRematWeight,
+                                      cheapRematWeight,
+                                      bias,
+                                      rawRegallocFileName)
+
+    polarityCorrect, averageDifference, sampleSize = outputTuple
+
+    print(f"polarity correct:{polarityCorrect}/{sampleSize - 1}")
     print(f"average difference:{averageDifference}")
