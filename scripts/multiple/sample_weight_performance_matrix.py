@@ -10,8 +10,12 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("params_file", None,
                     "The file containing the model parameters for each sample")
-flags.DEFINE_string("output_file", "outpt.txt", "The output file")
 flags.DEFINE_bool("is_csv", False, "Whether or not to outpt in CSV format")
+flags.DEFINE_multi_string(
+    "additional_models", [],
+    "Paths to files containing the parameters to additional models that are "
+    "added to the end of the matrix")
+                      
 
 flags.mark_flag_as_required("params_file")
 
@@ -31,6 +35,21 @@ def main(_):
                 "intercept": float(components[5]),
             }
             perSampleParams.append(sampleParams)
+    # add additional models if requested
+    for additionalModelFileName in FLAGS.additional_models:
+        with open(additionalModelFileName) as additionalModelFile:
+            additionalModelLines = additionalModelFile.readlines()
+            weights = additionalModelLines[0].split(" ")
+            intercept = float(additionalModelLines[1])
+            modelParams = {
+                "copyWeight": float(weights[0]),
+                "loadWeight": float(weights[1]),
+                "storeWeight": float(weights[2]),
+                "expensiveRematWeight": float(weights[3]),
+                "cheapRematWeight": float(weights[4]),
+                "intercept": intercept
+            }
+            perSampleParams.append(modelParams)
     # ends up being a two dimensional array
     results = []
     for sampleParams in perSampleParams:
