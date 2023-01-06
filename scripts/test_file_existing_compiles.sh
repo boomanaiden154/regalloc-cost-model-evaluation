@@ -2,7 +2,7 @@
 set -e
 
 processExecutable () {
-    /regalloc-testing/scripts/benchmark.sh $1/test-$2 test-$2.benchmark.txt
+    /regalloc-testing/scripts/benchmark.sh $1/test-$2 test-$2.benchmark.txt $3
 }
 
 count=31
@@ -19,7 +19,7 @@ $1/test-call-count > call-counts.txt
 for (( i=1; i<=$count; i++ ))
 do
     ((j=(j+1)%threads)) || wait
-    processExecutable $1 $i &
+    processExecutable $1 $i $((i%threads)) &
 done
 wait
 # post process executable serially to avoid file access race conditions
