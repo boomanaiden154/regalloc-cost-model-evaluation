@@ -1,4 +1,5 @@
 set -x
+set -e
 if [[ ${1:(-3)} == cpp ]]
 then
     compiler=/llvm-project/build/bin/clang++
@@ -22,7 +23,7 @@ $compiler $1 -o $2 -O3 -lm \
     -mllvm -regalloc-randomize-evictions \
     $EXTRA_FLAGS &> $2.regallocscoring.txt
 sha1sum $2 >> checksums.txt
-rm prof.data
-rm default.profraw
-rm $2-instrumented
-rm log
+rm prof.data || true
+rm default.profraw || true
+rm $2-instrumented || true
+rm log || true
