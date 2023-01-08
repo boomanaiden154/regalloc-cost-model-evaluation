@@ -10,20 +10,20 @@ $compiler $1 -o $2-instrumented -O3 -lm \
     -fprofile-instr-generate \
     -mllvm -regalloc-enable-advisor=development \
     -mllvm -regalloc-model=$3 \
-    -mllvm -regalloc-training-log=./log \
+    -mllvm -regalloc-training-log=./$2.regalloclog \
     $EXTRA_FLAGS
-./$2-instrumented
-/llvm-project/build/bin/llvm-profdata merge --output prof.data default.profraw
+LLVM_PROFILE_FILE=$2.profraw ./$2-instrumented
+/llvm-project/build/bin/llvm-profdata merge --output $2.profdata $2.profraw
 $compiler $1 -o $2 -O3 -lm \
-    -fprofile-instr-use=./prof.data \
+    -fprofile-instr-use=$2.profdata \
     -mllvm -regalloc-enable-advisor=development \
     -mllvm -regalloc-model=$3 \
-    -mllvm -regalloc-training-log=./log \
+    -mllvm -regalloc-training-log=./$2.regalloclog \
     -mllvm -debug-only=regallocscore \
     -mllvm -regalloc-randomize-evictions \
     $EXTRA_FLAGS &> $2.regallocscoring.txt
 sha1sum $2 >> checksums.txt
-rm prof.data || true
-rm default.profraw || true
-rm $2-instrumented || true
-rm log || true
+rm $2.profdata
+rm $2.profraw
+rm $2-instrumented
+rm $2.regalloclog
