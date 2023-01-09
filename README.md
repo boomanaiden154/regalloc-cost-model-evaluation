@@ -29,7 +29,7 @@ following the instructions in `experimental/docker/README.md`. This will give
 an image tagged `mlgo-development`. Then you can build the Docker image
 present in this repository:
 
-```
+```bash
 cd /path/to/regalloc-cost-model-evaluation
 docker build -t regalloc-cost-model-evaluation .
 ```
@@ -37,3 +37,12 @@ docker build -t regalloc-cost-model-evaluation .
 This will take a while and consume quite a bit of disk space as it does
 quite a few things to set up a development environment that allows for
 a lot of experimentation.
+
+Starting the docker container is pretty simple:
+```bash
+docker run -it --name regalloc-testing --privileged regalloc-cost-model-evaluation
+```
+
+Note the presence of the `--privileged` flag. Some of the functionality present
+in the scripts within this repository will not work if you do not run the
+container with this flag (particularly perf recording).
