@@ -1,5 +1,5 @@
 diff --git a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
-index 8896f056f4b0..514868e6133e 100644
+index 8896f056f4b0..8ba3c53b70d2 100644
 --- a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
 +++ b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
 @@ -40,6 +40,9 @@
@@ -27,7 +27,7 @@ index 8896f056f4b0..514868e6133e 100644
    }
    *Runner->getTensor<float>(FeatureIDs::progress) =
        static_cast<float>(RA.getQueueSize()) / InitialQSize;
-+  
++ 
 +  std::vector<int> EvictionPositions;
 +  for(int I = 0; I < NumberOfInterferences; ++I) {
 +    if(Regs[I].second) {
@@ -37,20 +37,19 @@ index 8896f056f4b0..514868e6133e 100644
  
    // Get a decision.
 -  size_t CandidatePos = tryFindEvictionCandidatePosition(
--      VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters);
 +  size_t CandidatePos = 32;
 +  if(RandomizeEvictionDecisions) {
 +    srand(time(NULL));
 +    CandidatePos = EvictionPositions[rand() % EvictionPositions.size()];
 +  } else {
 +    CandidatePos = tryFindEvictionCandidatePosition(
-+      VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters); 
+       VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters);
 +  }
    // The contract with the ML side is that CandidatePos is mask == 1 (i.e.
    // Regs[CandidatePos].second)
    assert(Regs[CandidatePos].second);
 diff --git a/llvm/lib/CodeGen/RegAllocScore.cpp b/llvm/lib/CodeGen/RegAllocScore.cpp
-index e420283dfcfa..d9ede0705ee3 100644
+index e420283dfcfa..960f4ab854d8 100644
 --- a/llvm/lib/CodeGen/RegAllocScore.cpp
 +++ b/llvm/lib/CodeGen/RegAllocScore.cpp
 @@ -24,6 +24,7 @@
@@ -79,17 +78,18 @@ index e420283dfcfa..d9ede0705ee3 100644
      llvm::function_ref<bool(const MachineInstr &)>
          IsTriviallyRematerializable) {
    RegAllocScore Total;
-@@ -117,5 +122,12 @@ RegAllocScore llvm::calculateRegAllocScore(
+@@ -117,5 +122,13 @@ RegAllocScore llvm::calculateRegAllocScore(
      }
      Total += MBBScore;
    }
-+  DEBUG_WITH_TYPE("regallocscore", dbgs() << GetEntryCount() << ","
++  DEBUG_WITH_TYPE("regallocscore", dbgs()
 +                                                << Total.copyCounts() << ","
 +                                                << Total.loadCounts() << ","
 +                                                << Total.storeCounts() << ","
 +                                                << Total.loadStoreCounts() << ","
 +                                                << Total.expensiveRematCounts() << ","
-+                                                << Total.cheapRematCounts() << "\n");
++                                                << Total.cheapRematCounts() << ","
++						<< MF.getName() << "\n");
    return Total;
  }
 diff --git a/llvm/lib/CodeGen/RegAllocScore.h b/llvm/lib/CodeGen/RegAllocScore.h
