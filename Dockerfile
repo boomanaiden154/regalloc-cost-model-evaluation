@@ -1,9 +1,9 @@
 FROM mlgo-development
 RUN git clone https://github.com/llvm/llvm-project
 WORKDIR /llvm-project
-RUN git checkout fc21f2d7bae2e0be630470cc7ca9323ed5859892
-COPY ./patches/regalloc-scoring.patch .
-RUN git apply regalloc-scoring.patch
+RUN git checkout a38a4654ce4b1d2ae8a03797d2e520e415150492
+COPY ./patches/llvm-*.patch ./
+RUN git apply llvm-*.patch
 RUN mkdir build
 WORKDIR /llvm-project/build
 RUN cmake -G Ninja \
@@ -54,19 +54,17 @@ RUN PYTHONPATH=$PYTHONPATH:. python3 compiler_opt/rl/train_bc.py \
     --gin_files=compiler_opt/rl/regalloc/gin_configs/behavioral_cloning_nn_agent.gin
 WORKDIR /
 RUN apt-get update && apt-get install -y libunwind-dev libgflags-dev libssl-dev libelf-dev protobuf-compiler
-RUN git clone --recursive https://github.com/google/autofdo
-WORKDIR /autofdo
-RUN git checkout 2c1e143d2a7c8545d5f1b7c625d9cde7fcb0db65
-COPY ./patches/autofdo-* ./
-RUN git apply autofdo-*.patch
-RUN mkdir -p /autofdo/build
-WORKDIR /autofdo/build
-RUN cmake -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=. \
-    -DLLVM_PATH=/llvm-install \
-    ../
-RUN cmake --build .
+#RUN git clone --recursive https://github.com/google/autofdo
+#WORKDIR /autofdo
+#RUN git checkout 5c4ef103b0c71568c77cb5050442ebc2fce045c6
+#RUN mkdir -p /autofdo/build
+#WORKDIR /autofdo/build
+#RUN cmake -G Ninja \
+#    -DCMAKE_BUILD_TYPE=Release \
+#    -DCMAKE_INSTALL_PREFIX=. \
+#    -DLLVM_PATH=/llvm-install \
+#    ../
+#RUN cmake --build .
 WORKDIR /
 RUN apt-get update && apt-get install -y flex bison
 RUN git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
