@@ -21,6 +21,7 @@ $compiler $1 -o $2 -O3 -lm \
     -mllvm -regalloc-training-log=./$2.regalloclog \
     -mllvm -debug-only=regallocscore \
     -mllvm -regalloc-randomize-evictions \
+    -fbasic-block-sections=labels \
     $EXTRA_FLAGS &> $2.regallocscoring.txt
 sha1sum $2 >> checksums.txt
 rm $2.profdata
