@@ -71,7 +71,13 @@ RUN git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds
 WORKDIR /linux/tools/perf
 RUN make
 RUN cp perf /usr/bin
-COPY . /regalloc-testing
 WORKDIR /
 RUN apt-get update && apt-get install -y time
 RUN git clone https://github.com/andikleen/pmu-tools
+# Install/setup uiCA
+RUN apt-get update && apt-get install -y gcc python3 python3-pip graphviz && pip3 install plotly
+RUN git clone https://github.com/andreas-abel/uiCA.git
+WORKDIR /uiCA
+RUN ./setup.sh
+WORKDIR /
+COPY . /regalloc-testing
