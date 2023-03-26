@@ -1,4 +1,14 @@
 FROM mlgo-development
+# install dependencies
+RUN apt-get update && apt-get install -y libunwind-dev \
+  libgflags-dev \
+  libssl-dev \
+  libelf-dev \
+  protobuf-compiler \
+  flex \
+  bison \
+  time
+# clone and build LLVM at specified checkout with patches
 RUN git clone https://github.com/llvm/llvm-project
 WORKDIR /llvm-project
 RUN git checkout a38a4654ce4b1d2ae8a03797d2e520e415150492
@@ -18,61 +28,14 @@ RUN cmake -G Ninja \
     ../llvm
 RUN cmake --build .
 RUN cmake --build . --target install
-RUN mkdir /llvm-corpus
-WORKDIR /llvm-corpus
-RUN cmake -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DLLVM_ENABLE_PROJECTS="clang" \
-    -DCMAKE_C_FLAGS="-Xclang -fembed-bitcode=all" \
-    -DCMAKE_CXX_FLAGS="-Xclang -fembed-bitcode=all" \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DCMAKE_C_COMPILER=/llvm-project/build/bin/clang \
-    -DCMAKE_CXX_COMPILER=/llvm-project/build/bin/clang++ \
-    -C /tflite/tflite.cmake \
-    /llvm-project/llvm
-RUN cmake --build .
-RUN mkdir /corpus
-WORKDIR /ml-compiler-opt
-ENV PYTHONPATH=/ml-compiler-opt
-RUN python3 compiler_opt/tools/extract_ir.py \
-    --cmd_filter="^-O2|-O3$" \
-    --input=/llvm-corpus/compile_commands.json \
-    --input_type=json \
-    --llvm_objcopy_path=/llvm-project/build/bin/llvm-objcopy \
-    --output_dir=/corpus
-RUN python3 compiler_opt/tools/generate_default_trace.py \
-    --data_path=/corpus \
-    --output_path=/default_trace \
-    --gin_files=compiler_opt/rl/regalloc/gin_configs/common.gin \
-    --gin_bindings=config_registry.get_configuration.implementation=@configs.RegallocEvictionConfig \
-    --gin_bindings=clang_path="'/llvm-project/build/bin/clang'" \
-    --sampling_rate=0.01
-RUN sed -i 's/10000/20/g' compiler_opt/rl/regalloc/gin_configs/behavioral_cloning_nn_agent.gin
-RUN PYTHONPATH=$PYTHONPATH:. python3 compiler_opt/rl/train_bc.py \
-    --root_dir=/warmstart \
-    --data_path=/default_trace \
-    --gin_files=compiler_opt/rl/regalloc/gin_configs/behavioral_cloning_nn_agent.gin
+# build and install userspace perf tools
 WORKDIR /
-RUN apt-get update && apt-get install -y libunwind-dev libgflags-dev libssl-dev libelf-dev protobuf-compiler
-#RUN git clone --recursive https://github.com/google/autofdo
-#WORKDIR /autofdo
-#RUN git checkout 5c4ef103b0c71568c77cb5050442ebc2fce045c6
-#RUN mkdir -p /autofdo/build
-#WORKDIR /autofdo/build
-#RUN cmake -G Ninja \
-#    -DCMAKE_BUILD_TYPE=Release \
-#    -DCMAKE_INSTALL_PREFIX=. \
-#    -DLLVM_PATH=/llvm-install \
-#    ../
-#RUN cmake --build .
-WORKDIR /
-RUN apt-get update && apt-get install -y flex bison
 RUN git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 WORKDIR /linux/tools/perf
 RUN make
 RUN cp perf /usr/bin
 WORKDIR /
-RUN apt-get update && apt-get install -y time
+# download pmu-tools
 RUN git clone https://github.com/andikleen/pmu-tools
 # Install/setup uiCA
 RUN apt-get update && apt-get install -y gcc python3 python3-pip graphviz && pip3 install plotly
