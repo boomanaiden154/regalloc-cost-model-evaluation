@@ -57,7 +57,7 @@ def main(_):
         for i in range(1,31):
             sampleParams["rawRegallocFileName"] = f"iteration-{i}/test-combined.txt"
             currentTestOutput = evaluateWithWeights(**sampleParams)
-            currentSampleResults.append(currentTestOutput[0] / (currentTestOutput[2] - 1))
+            currentSampleResults.append(currentTestOutput[0] / (currentTestOutput[3] - 1))
         results.append(currentSampleResults)
     for row in results:
         for index, column in enumerate(row):

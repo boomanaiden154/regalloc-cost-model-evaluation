@@ -63,7 +63,7 @@ if __name__ == '__main__':
                                       bias,
                                       rawRegallocFileName)
 
-    polarityCorrect, averageDifference, sampleSize = outputTuple
+    polarityCorrect, averageDifference, tau, sampleSize = outputTuple
 
     print(f"polarity correct:{polarityCorrect}/{sampleSize - 1}")
     print(f"average difference:{averageDifference}")
