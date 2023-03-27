@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y libunwind-dev \
 # clone and build LLVM at specified checkout with patches
 RUN git clone https://github.com/llvm/llvm-project
 WORKDIR /llvm-project
-RUN git checkout a38a4654ce4b1d2ae8a03797d2e520e415150492
+RUN git checkout 6cef325481a8efc039ae9df5630609fd3a84560c
 COPY ./patches/llvm-*.patch ./
 RUN git apply llvm-*.patch
 RUN mkdir build

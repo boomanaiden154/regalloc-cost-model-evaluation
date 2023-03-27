@@ -1,3 +1,80 @@
+diff --git a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
+index daba130bf158..89848cfb4b97 100644
+--- a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
++++ b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
+@@ -23,6 +23,9 @@
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Target/TargetMachine.h"
+ 
++#include <cstdlib>
++#include <ctime>
++
+ using namespace llvm;
+ 
+ static cl::opt<RegAllocEvictionAdvisorAnalysis::AdvisorMode> Mode(
+@@ -43,6 +46,10 @@ static cl::opt<bool> EnableLocalReassignment(
+              "may be compile time intensive"),
+     cl::init(false));
+ 
++static cl::opt<bool> RandomizeEvictionDecisions(
++    "regalloc-randomize-evictions", cl::Hidden,
++    cl::desc("Whether or not to randomize eviction decisions"));
++
+ namespace llvm {
+ cl::opt<unsigned> EvictInterferenceCutoff(
+     "regalloc-eviction-max-interference-cutoff", cl::Hidden,
+@@ -130,7 +137,9 @@ RegAllocEvictionAdvisor::RegAllocEvictionAdvisor(const MachineFunction &MF,
+       RegClassInfo(RA.getRegClassInfo()), RegCosts(TRI->getRegisterCosts(MF)),
+       EnableLocalReassign(EnableLocalReassignment ||
+                           MF.getSubtarget().enableRALocalReassignment(
+-                              MF.getTarget().getOptLevel())) {}
++                              MF.getTarget().getOptLevel())) {
++  srand(time(NULL));
++}
+ 
+ /// shouldEvict - determine if A should evict the assigned live range B. The
+ /// eviction policy defined by this function together with the allocation order
+@@ -291,10 +300,21 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
+     BestCost.MaxWeight = VirtReg.weight();
+   }
+ 
++  std::vector<int> EvictionPositions;
++  size_t index1 = 0;
++
+   for (auto I = Order.begin(), E = Order.getOrderLimitEnd(OrderLimit); I != E;
+        ++I) {
+     MCRegister PhysReg = *I;
+     assert(PhysReg);
++
++    if(RandomizeEvictionDecisions && canAllocatePhysReg(CostPerUseLimit, PhysReg) &&
++       canEvictHintInterference(VirtReg, PhysReg, FixedRegisters)) {
++      EvictionPositions.push_back(index1);
++    }
++
++    ++index1;
++
+     if (!canAllocatePhysReg(CostPerUseLimit, PhysReg) ||
+         !canEvictInterferenceBasedOnCost(VirtReg, PhysReg, false, BestCost,
+                                          FixedRegisters))
+@@ -307,5 +327,18 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
+     if (I.isHint())
+       break;
+   }
++
++  if(RandomizeEvictionDecisions && !EvictionPositions.empty()) {
++    size_t CandidatePosition = EvictionPositions[rand() % EvictionPositions.size()];
++    size_t index2 = 0;
++    for (auto I = Order.begin(), E = Order.getOrderLimitEnd(OrderLimit); I != E;
++       ++I) {
++      if(index2 == CandidatePosition) {
++        BestPhys = *I;
++        break;
++      }
++      ++index2;
++    }
++  }
+   return BestPhys;
+ }
 diff --git a/llvm/lib/CodeGen/RegAllocScore.cpp b/llvm/lib/CodeGen/RegAllocScore.cpp
 index e420283dfcfa..960f4ab854d8 100644
 --- a/llvm/lib/CodeGen/RegAllocScore.cpp
@@ -54,80 +131,3 @@ index b80adae29f23..b6eb555aa177 100644
      llvm::function_ref<bool(const MachineInstr &)> IsTriviallyRematerializable);
  } // end namespace llvm
  
-diff --git a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
-index 048496f452da..3e18fa4444f7 100644
---- a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
-+++ b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
-@@ -23,6 +23,9 @@
- #include "llvm/Support/ErrorHandling.h"
- #include "llvm/Target/TargetMachine.h"
- 
-+#include <cstdlib>
-+#include <ctime>
-+
- using namespace llvm;
- 
- static cl::opt<RegAllocEvictionAdvisorAnalysis::AdvisorMode> Mode(
-@@ -51,6 +54,10 @@ cl::opt<unsigned> EvictInterferenceCutoff(
-              "disable, pass a very large number."),
-     cl::init(10));
- 
-+static cl::opt<bool> RandomizeEvictionDecisions(
-+    "regalloc-randomize-evictions", cl::Hidden,
-+    cl::desc("Whether or not to randomize eviction decisions"));
-+
- #define DEBUG_TYPE "regalloc"
- #ifdef LLVM_HAVE_TF_AOT_REGALLOCEVICTMODEL
- #define LLVM_HAVE_TF_AOT
-@@ -128,7 +135,9 @@ RegAllocEvictionAdvisor::RegAllocEvictionAdvisor(const MachineFunction &MF,
-       RegClassInfo(RA.getRegClassInfo()), RegCosts(TRI->getRegisterCosts(MF)),
-       EnableLocalReassign(EnableLocalReassignment ||
-                           MF.getSubtarget().enableRALocalReassignment(
--                              MF.getTarget().getOptLevel())) {}
-+                              MF.getTarget().getOptLevel())) {
-+  srand(time(NULL));
-+}
- 
- /// shouldEvict - determine if A should evict the assigned live range B. The
- /// eviction policy defined by this function together with the allocation order
-@@ -289,10 +298,21 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
-     BestCost.MaxWeight = VirtReg.weight();
-   }
- 
-+  std::vector<int> EvictionPositions;
-+  size_t index1 = 0;
-+
-   for (auto I = Order.begin(), E = Order.getOrderLimitEnd(OrderLimit); I != E;
-        ++I) {
-     MCRegister PhysReg = *I;
-     assert(PhysReg);
-+
-+    if(RandomizeEvictionDecisions && canAllocatePhysReg(CostPerUseLimit, PhysReg) &&
-+       canEvictHintInterference(VirtReg, PhysReg, FixedRegisters)) {
-+      EvictionPositions.push_back(index1);
-+    }
-+
-+    ++index1;
-+
-     if (!canAllocatePhysReg(CostPerUseLimit, PhysReg) ||
-         !canEvictInterferenceBasedOnCost(VirtReg, PhysReg, false, BestCost,
-                                          FixedRegisters))
-@@ -305,5 +325,18 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
-     if (I.isHint())
-       break;
-   }
-+
-+  if(RandomizeEvictionDecisions && !EvictionPositions.empty()) {
-+    size_t CandidatePosition = EvictionPositions[rand() % EvictionPositions.size()];
-+    size_t index2 = 0;
-+    for (auto I = Order.begin(), E = Order.getOrderLimitEnd(OrderLimit); I != E;
-+       ++I) {
-+      if(index2 == CandidatePosition) {
-+        BestPhys = *I;
-+        break;
-+      }
-+      ++index2;
-+    }
-+  }
-   return BestPhys;
- }
