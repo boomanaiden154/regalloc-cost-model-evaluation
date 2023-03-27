@@ -1,53 +1,3 @@
-diff --git a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
-index 8896f056f4b0..8ba3c53b70d2 100644
---- a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
-+++ b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
-@@ -40,6 +40,9 @@
- #include <array>
- #include <memory>
- 
-+#include <cstdlib>
-+#include <ctime>
-+
- using namespace llvm;
- 
- #define DEBUG_TYPE "ml-regalloc"
-@@ -70,6 +73,10 @@ static cl::opt<bool> EnableDevelopmentFeatures(
-     cl::desc("Whether or not to enable features under development for the ML "
-              "regalloc advisor"));
- 
-+static cl::opt<bool> RandomizeEvictionDecisions(
-+    "regalloc-randomize-evictions", cl::Hidden,
-+    cl::desc("Whether or not to randomize eviction decisions"));
-+
- #else
- static const bool EnableDevelopmentFeatures = false;
- #endif // #ifdef LLVM_HAVE_TFLITE
-@@ -759,10 +766,23 @@ MCRegister MLEvictAdvisor::tryFindEvictionCandidate(
-   }
-   *Runner->getTensor<float>(FeatureIDs::progress) =
-       static_cast<float>(RA.getQueueSize()) / InitialQSize;
-+ 
-+  std::vector<int> EvictionPositions;
-+  for(int I = 0; I < NumberOfInterferences; ++I) {
-+    if(Regs[I].second) {
-+      EvictionPositions.push_back(I);
-+    }
-+  }
- 
-   // Get a decision.
--  size_t CandidatePos = tryFindEvictionCandidatePosition(
-+  size_t CandidatePos = 32;
-+  if(RandomizeEvictionDecisions) {
-+    srand(time(NULL));
-+    CandidatePos = EvictionPositions[rand() % EvictionPositions.size()];
-+  } else {
-+    CandidatePos = tryFindEvictionCandidatePosition(
-       VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters);
-+  }
-   // The contract with the ML side is that CandidatePos is mask == 1 (i.e.
-   // Regs[CandidatePos].second)
-   assert(Regs[CandidatePos].second);
 diff --git a/llvm/lib/CodeGen/RegAllocScore.cpp b/llvm/lib/CodeGen/RegAllocScore.cpp
 index e420283dfcfa..960f4ab854d8 100644
 --- a/llvm/lib/CodeGen/RegAllocScore.cpp
@@ -104,3 +54,80 @@ index b80adae29f23..b6eb555aa177 100644
      llvm::function_ref<bool(const MachineInstr &)> IsTriviallyRematerializable);
  } // end namespace llvm
  
+diff --git a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
+index 048496f452da..3e18fa4444f7 100644
+--- a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
++++ b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
+@@ -23,6 +23,9 @@
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Target/TargetMachine.h"
+ 
++#include <cstdlib>
++#include <ctime>
++
+ using namespace llvm;
+ 
+ static cl::opt<RegAllocEvictionAdvisorAnalysis::AdvisorMode> Mode(
+@@ -51,6 +54,10 @@ cl::opt<unsigned> EvictInterferenceCutoff(
+              "disable, pass a very large number."),
+     cl::init(10));
+ 
++static cl::opt<bool> RandomizeEvictionDecisions(
++    "regalloc-randomize-evictions", cl::Hidden,
++    cl::desc("Whether or not to randomize eviction decisions"));
++
+ #define DEBUG_TYPE "regalloc"
+ #ifdef LLVM_HAVE_TF_AOT_REGALLOCEVICTMODEL
+ #define LLVM_HAVE_TF_AOT
+@@ -128,7 +135,9 @@ RegAllocEvictionAdvisor::RegAllocEvictionAdvisor(const MachineFunction &MF,
+       RegClassInfo(RA.getRegClassInfo()), RegCosts(TRI->getRegisterCosts(MF)),
+       EnableLocalReassign(EnableLocalReassignment ||
+                           MF.getSubtarget().enableRALocalReassignment(
+-                              MF.getTarget().getOptLevel())) {}
++                              MF.getTarget().getOptLevel())) {
++  srand(time(NULL));
++}
+ 
+ /// shouldEvict - determine if A should evict the assigned live range B. The
+ /// eviction policy defined by this function together with the allocation order
+@@ -289,10 +298,21 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
+     BestCost.MaxWeight = VirtReg.weight();
+   }
+ 
++  std::vector<int> EvictionPositions;
++  size_t index1 = 0;
++
+   for (auto I = Order.begin(), E = Order.getOrderLimitEnd(OrderLimit); I != E;
+        ++I) {
+     MCRegister PhysReg = *I;
+     assert(PhysReg);
++
++    if(RandomizeEvictionDecisions && canAllocatePhysReg(CostPerUseLimit, PhysReg) &&
++       canEvictHintInterference(VirtReg, PhysReg, FixedRegisters)) {
++      EvictionPositions.push_back(index1);
++    }
++
++    ++index1;
++
+     if (!canAllocatePhysReg(CostPerUseLimit, PhysReg) ||
+         !canEvictInterferenceBasedOnCost(VirtReg, PhysReg, false, BestCost,
+                                          FixedRegisters))
+@@ -305,5 +325,18 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
+     if (I.isHint())
+       break;
+   }
++
++  if(RandomizeEvictionDecisions && !EvictionPositions.empty()) {
++    size_t CandidatePosition = EvictionPositions[rand() % EvictionPositions.size()];
++    size_t index2 = 0;
++    for (auto I = Order.begin(), E = Order.getOrderLimitEnd(OrderLimit); I != E;
++       ++I) {
++      if(index2 == CandidatePosition) {
++        BestPhys = *I;
++        break;
++      }
++      ++index2;
++    }
++  }
+   return BestPhys;
+ }
