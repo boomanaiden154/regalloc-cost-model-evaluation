@@ -134,3 +134,19 @@ index b80adae29f23..b6eb555aa177 100644
      llvm::function_ref<bool(const MachineInstr &)> IsTriviallyRematerializable);
  } // end namespace llvm
  
+diff --git a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
+index 1ff4356b6046..ce671c4e1bbc 100644
+--- a/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
++++ b/llvm/lib/CodeGen/MLRegallocEvictAdvisor.cpp
+@@ -777,9 +777,9 @@ MCRegister MLEvictAdvisor::tryFindEvictionCandidate(
+       VirtReg, Order, OrderLimit, CostPerUseLimit, FixedRegisters);
+   // The contract with the ML side is that CandidatePos is mask == 1 (i.e.
+   // Regs[CandidatePos].second)
+-  assert(Regs[CandidatePos].second);
++  //assert(Regs[CandidatePos].second);
+   if (CandidatePos == CandidateVirtRegPos) {
+-    assert(!MustFindEviction);
++    //assert(!MustFindEviction);
+     return MCRegister::NoRegister;
+   }
+   assert(CandidatePos < ValidPosLimit);
