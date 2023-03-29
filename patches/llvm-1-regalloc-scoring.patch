@@ -1,5 +1,5 @@
 diff --git a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
-index daba130bf158..89848cfb4b97 100644
+index daba130bf158..aa204c27f98d 100644
 --- a/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
 +++ b/llvm/lib/CodeGen/RegAllocEvictionAdvisor.cpp
 @@ -23,6 +23,9 @@
@@ -7,7 +7,7 @@ index daba130bf158..89848cfb4b97 100644
  #include "llvm/Target/TargetMachine.h"
  
 +#include <cstdlib>
-+#include <ctime>
++#include <chrono>
 +
  using namespace llvm;
  
@@ -23,18 +23,21 @@ index daba130bf158..89848cfb4b97 100644
  namespace llvm {
  cl::opt<unsigned> EvictInterferenceCutoff(
      "regalloc-eviction-max-interference-cutoff", cl::Hidden,
-@@ -130,7 +137,9 @@ RegAllocEvictionAdvisor::RegAllocEvictionAdvisor(const MachineFunction &MF,
+@@ -130,7 +137,12 @@ RegAllocEvictionAdvisor::RegAllocEvictionAdvisor(const MachineFunction &MF,
        RegClassInfo(RA.getRegClassInfo()), RegCosts(TRI->getRegisterCosts(MF)),
        EnableLocalReassign(EnableLocalReassignment ||
                            MF.getSubtarget().enableRALocalReassignment(
 -                              MF.getTarget().getOptLevel())) {}
 +                              MF.getTarget().getOptLevel())) {
-+  srand(time(NULL));
++  int seed = std::chrono::duration_cast<std::chrono::milliseconds>(
++                 std::chrono::system_clock::now().time_since_epoch())
++                 .count();
++  srand(seed);
 +}
  
  /// shouldEvict - determine if A should evict the assigned live range B. The
  /// eviction policy defined by this function together with the allocation order
-@@ -291,10 +300,21 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
+@@ -291,10 +303,21 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
      BestCost.MaxWeight = VirtReg.weight();
    }
  
@@ -56,7 +59,7 @@ index daba130bf158..89848cfb4b97 100644
      if (!canAllocatePhysReg(CostPerUseLimit, PhysReg) ||
          !canEvictInterferenceBasedOnCost(VirtReg, PhysReg, false, BestCost,
                                           FixedRegisters))
-@@ -307,5 +327,18 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
+@@ -307,5 +330,18 @@ MCRegister DefaultEvictionAdvisor::tryFindEvictionCandidate(
      if (I.isHint())
        break;
    }
