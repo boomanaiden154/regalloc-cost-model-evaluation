@@ -55,7 +55,7 @@ def main(_):
         print(f"Unadjusted R^2 value:{regression.score(X,y)}")
         print(f"Post regression polarity correct:{newModelEvaluated[0]}")
         print(f"Post regression average difference:{newModelEvaluated[1]}")
-        print(f"Post regression kendall's tau:{newModelEvaluated[2].statistic}")
+        print(f"Post regression kendall's tau:{newModelEvaluated[2].correlation}")
     elif FLAGS.output == "coefficients":
         print(f"{coefficients[0]} {coefficients[1]} {coefficients[2]} {coefficients[3]} {coefficients[4]}")
     elif FLAGS.output == "intercept":
