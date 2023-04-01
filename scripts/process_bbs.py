@@ -55,4 +55,4 @@ if __name__ == "__main__":
     frequencyDump = sys.argv[2]
     totalCycles = getWeightedCycleCountFromFiles(executable, frequencyDump, "main")
 
-    print(totalCycles)
+    print(totalCycles, end='')
