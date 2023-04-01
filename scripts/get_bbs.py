@@ -21,20 +21,14 @@ def getBBAddrMap(inputFile):
         "/llvm-project/build/bin/llvm-readelf", "--bb-addr-map",
         "--elf-output-style=JSON", inputFile
     ]
-    bbaddrmap = {}
     with subprocess.Popen(BBAddrMapCommandVector,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as ReadElfProcess:
         out, err = ReadElfProcess.communicate()
         return json.loads(out.decode("UTF-8"))
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("usage: python3 get_bbs.py <executable path>")
-        sys.exit(1)
-    
-    ExecutablePath = sys.argv[1]
-    bbaddrmap = getBBAddrMap(ExecutablePath)
+def getBasicBlocks(inputFile):
+    bbaddrmap = getBBAddrMap(inputFile)
     
     functionStart = bbaddrmap[0]["BBAddrMap"][0]["Function"]["At"]
     BasicBlocks = []
@@ -53,5 +47,21 @@ if __name__ == "__main__":
             binaryFileData[functionStart + basicBlock["offset"]:functionStart +
                            basicBlock["offset"] + basicBlock["size"]]).decode("UTF-8")
         basicBlock["asm"] = getAssembly(hexStringToSeparatedHexString(basicBlock["hex"]))
-    print(BasicBlocks[5]["hex"])
-    print(BasicBlocks[5]["asm"])
+    return BasicBlocks
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("usage: python3 get_bbs.py <executable path>")
+        sys.exit(1)
+    
+    ExecutablePath = sys.argv[1]
+    bbaddrmap = getBBAddrMap(ExecutablePath)
+    
+    functionStart = bbaddrmap[0]["BBAddrMap"][0]["Function"]["At"]
+    BasicBlocks = getBasicBlocks(ExecutablePath)
+
+    # remove textual asm for display
+    for basicBlock in BasicBlocks:
+        basicBlock.pop("asm")
+    
+    print(json.dumps(BasicBlocks, indent=4))
