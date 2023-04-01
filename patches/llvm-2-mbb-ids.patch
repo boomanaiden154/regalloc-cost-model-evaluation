@@ -1,0 +1,56 @@
+From 8423a98de66a7aa9af5fa80db4211482aa6e72a4 Mon Sep 17 00:00:00 2001
+From: Aiden Grossman <agrossman154@yahoo.com>
+Date: Sat, 1 Apr 2023 01:53:49 +0000
+Subject: [PATCH] [MLGO] Change MBB Profile Dump from using MBB numbers to MBB
+ IDs
+
+Currenty, setting the -mbb-profile-dump dumps a CSV file with blocks
+inside an individual function identified by their MBB numbers. This
+patch changes the MBBs to be identified by their ID which is set at MBB
+creation and not changed afterwards, making it inherently stable
+throughout the backend. This alleviates concerns with the MBB IDs
+changing between the profile dump and what ends up in the final object
+file. The MBBs inside the SHT_LLVM_BB_ADDR_MAP sections are also
+identified using their MBB ID rather than number, so if we want to match
+them up we need to identify the MBBs here by number.
+
+Differential Revision: https://reviews.llvm.org/D147366
+---
+ llvm/lib/CodeGen/AsmPrinter/AsmPrinter.cpp      | 4 ++--
+ llvm/test/CodeGen/MLRegalloc/bb-profile-dump.ll | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/llvm/lib/CodeGen/AsmPrinter/AsmPrinter.cpp b/llvm/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+index a663c957dac02..a17df2d7fc04a 100644
+--- a/llvm/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
++++ b/llvm/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+@@ -1924,14 +1924,14 @@ void AsmPrinter::emitFunctionBody() {
+ 
+   OutStreamer->addBlankLine();
+ 
+-  // Output MBB numbers, function names, and frequencies if the flag to dump
++  // Output MBB ids, function names, and frequencies if the flag to dump
+   // MBB profile information has been set
+   if (MBBProfileDumpFileOutput) {
+     MachineBlockFrequencyInfo &MBFI =
+         getAnalysis<LazyMachineBlockFrequencyInfoPass>().getBFI();
+     for (const auto &MBB : *MF) {
+       *MBBProfileDumpFileOutput.get()
+-          << MF->getName() << "," << MBB.getNumber() << ","
++          << MF->getName() << "," << MBB.getBBID() << ","
+           << MBFI.getBlockFreqRelativeToEntryBlock(&MBB) << "\n";
+     }
+   }
+diff --git a/llvm/test/CodeGen/MLRegalloc/bb-profile-dump.ll b/llvm/test/CodeGen/MLRegalloc/bb-profile-dump.ll
+index d876d73997482..9863b01d6993a 100644
+--- a/llvm/test/CodeGen/MLRegalloc/bb-profile-dump.ll
++++ b/llvm/test/CodeGen/MLRegalloc/bb-profile-dump.ll
+@@ -3,7 +3,7 @@
+ ; Check that the basic block profile dump outputs data and in the correct
+ ; format.
+ ;
+-; RUN: llc -mtriple=x86_64-linux-unknown -o /dev/null -mbb-profile-dump=- %s | FileCheck %s
++; RUN: llc -mtriple=x86_64-linux-unknown -o /dev/null -basic-block-sections=list -mbb-profile-dump=- %s | FileCheck %s
+ 
+ ; bb profile dump is not supported on NVPTX
+ ; UNSUPPORTED: target=nvptx{{.*}}

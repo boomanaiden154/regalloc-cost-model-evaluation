@@ -22,6 +22,7 @@ $compiler $1 -o $2 -O3 -lm \
     -mllvm -debug-only=regallocscore \
     -mllvm -regalloc-randomize-evictions \
     -fbasic-block-sections=labels \
+    -mllvm -mbb-profile-dump=$2.profiledump \
     $EXTRA_FLAGS &> $2.regallocscoring.txt
 sha1sum $2 >> checksums.txt
 rm $2.profdata
