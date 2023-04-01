@@ -56,6 +56,14 @@ def getBasicBlocks(inputFile, functionName):
         basicBlock["asm"] = getAssembly(hexStringToSeparatedHexString(basicBlock["hex"]))
     return BasicBlocks
 
+def getBasicBlockHexMap(inputFile, functionName):
+    basicBlocks = getBasicBlocks(inputFile, functionName)
+    basicBlockHexMap = {}
+    for basicBlock in basicBlocks:
+        basicBlockHexMap[basicBlock["id"]] = basicBlock["hex"]
+
+    return basicBlockHexMap
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("usage: python3 get_bbs.py <executable path> <function name>")
