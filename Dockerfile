@@ -41,6 +41,8 @@ RUN git clone https://github.com/andikleen/pmu-tools
 RUN apt-get update && apt-get install -y gcc python3 python3-pip graphviz && pip3 install plotly
 RUN git clone https://github.com/andreas-abel/uiCA.git
 WORKDIR /uiCA
+COPY ./patches/uica-*.patch ./
+RUN git apply uica-*.patch
 RUN ./setup.sh
 WORKDIR /
 COPY . /regalloc-testing

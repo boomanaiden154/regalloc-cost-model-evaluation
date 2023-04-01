@@ -1,0 +1,97 @@
+From 6a0546a0efd69b9cb8e4c66a2792fba141cac271 Mon Sep 17 00:00:00 2001
+From: Aiden Grossman <agrossman154@yahoo.com>
+Date: Sat, 1 Apr 2023 00:47:02 +0000
+Subject: [PATCH] Enable disassembling hex strings
+
+This patch enables disassembling hex strings by changing the input
+options to the uiCA.py script. Instead of accepting a file as a
+positional argument, a file is now accepted as a flag. Input can also be
+accepted with the hex flag, assuming a hex string is passed in. This
+allows for more easily working with the BHive dataset using the main
+uiCA.py script in addition to other tools that pass around various
+representations of machine code without having to write anything to a
+file.
+---
+ README.md |  4 +++-
+ uiCA.py   | 19 +++++++++++++++----
+ 2 files changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/README.md b/README.md
+index 58e9d75..2a40796 100644
+--- a/README.md
++++ b/README.md
+@@ -53,7 +53,7 @@ An online version of uiCA is available at [uiCA.uops.info](https://uiCA.uops.inf
+ 
+ 	echo ".intel_syntax noprefix; l: add rax, rbx; add rbx, rax; dec r15; jnz l" > test.asm
+     as test.asm -o test.o
+-    ./uiCA.py test.o -arch SKL
++    ./uiCA.py -file test.o -arch SKL
+ 
+ ## Command-Line Options
+ 
+@@ -61,6 +61,8 @@ The following parameters are optional. Parameter names may be abbreviated if the
+ 
+ | Option                       | Description |
+ |------------------------------|-------------|
++| `-file`                  | The path to the file that uiCA should disassemble and analyze. Mutually exclusive with `-hex`. |
++| `-hex`                   | A string of bytes in hex form that uiCA should disassemble and analyze. Mutually exclusive with `-file`. |
+ | `-arch`                  | The microarchitecture of the simulated CPU. Available microarchitectures: `SNB`, `IVB`, `HSW`, `BDW`, `SKL`, `SKX`, `KBL`, `CFL`, `CLX`, `ICL`, `TGL`, `RKL`. Alternatively, you can use `all` to get an overview of the throughputs for all supported microarchitectures.  `[Default: all]` |
+ | `-iacaMarkers`           | Analyze only the code that is between the `IACA_START` and `IACA_END` markers of Intel's [IACA](https://software.intel.com/content/www/us/en/develop/articles/intel-architecture-code-analyzer.html) tool. |
+ | `-raw`                   | Analyze a file that directly contains the machine code of the benchmark, but no headers or other data. |
+diff --git a/uiCA.py b/uiCA.py
+index d0f0268..0ad0da6 100755
+--- a/uiCA.py
++++ b/uiCA.py
+@@ -2783,14 +2783,14 @@ def runSimulation(disas, uArchConfig: MicroArchConfig, alignmentOffset, initPoli
+ 
+    return TP
+ 
+-
+ # Disassembles a binary and finds for each instruction the corresponding entry in the XML file.
+ # With the -iacaMarkers option, only the parts of the code that are between the IACA markers are considered.
+ def main():
+    allMicroArchs = sorted(m for m in MicroArchConfigs if not '_' in m)
+ 
+    parser = argparse.ArgumentParser(description='Disassembler')
+-   parser.add_argument('filename', help='File to be disassembled')
++   parser.add_argument('-filename', help='File to be disassembled')
++   parser.add_argument('-hex', help='Hex to be disassembled')
+    parser.add_argument('-iacaMarkers', help='Use IACA markers', action='store_true')
+    parser.add_argument('-raw', help='raw file', action='store_true')
+    parser.add_argument('-arch', help='Microarchitecture; Possible values: all, ' + ', '.join(allMicroArchs), default='all')
+@@ -2812,6 +2812,10 @@ def main():
+                                            'default: "diff"', default='diff')
+    args = parser.parse_args()
+ 
++   if (args.hex is not None and args.filename is not None) or (args.hex is None and args.filename is None):
++      print('One and only one of -hex or -filename must be specified')
++      exit(1)
++
+    if not args.arch in list(MicroArchConfigs) + ['all']:
+       print('Unsupported microarchitecture')
+       exit(1)
+@@ -2823,7 +2827,11 @@ def main():
+       if args.TPonly or args.trace or args.graph or args.depGraph or args.json or (args.alignmentOffset == 'all'):
+          print('Unsupported parameter combination')
+          exit(1)
+-      disasList = [xed.disasFile(args.filename, chip=MicroArchConfigs[uArch].XEDName, raw=args.raw, useIACAMarkers=args.iacaMarkers) for uArch in allMicroArchs]
++      
++      if args.filename is not None:
++         disasList = [xed.disasFile(args.filename, chip=MicroArchConfigs[uArch].XEDName, raw=args.raw, useIACAMarkers=args.iacaMarkers) for uArch in allMicroArchs]
++      else:
++         disasList = [xed.disasHex(args.hex, chip=MicroArchConfigs[uArch].XEDName, useIACAMarkers=args.iacaMarkers) for uArch in allMicroArchs]
+       uArchConfigsList = [MicroArchConfigs[uArch] for uArch in allMicroArchs]
+       with futures.ProcessPoolExecutor() as executor:
+          TPList = list(executor.map(runSimulation, disasList, uArchConfigsList, repeat(int(args.alignmentOffset)), repeat(args.initPolicy),
+@@ -2842,7 +2850,10 @@ def main():
+       exit(0)
+ 
+    uArchConfig = MicroArchConfigs[args.arch]
+-   disas = xed.disasFile(args.filename, chip=uArchConfig.XEDName, raw=args.raw, useIACAMarkers=args.iacaMarkers)
++   if args.filename is not None:
++      disas = xed.disasFile(args.filename, chip=uArchConfig.XEDName, raw=args.raw, useIACAMarkers=args.iacaMarkers)
++   else:
++      disas = xed.disasHex(args.hex, chip=uArchConfig.XEDName, useIACAMarkers=args.iacaMarkers)
+    if args.alignmentOffset == 'all':
+       if args.TPonly or args.trace or args.graph or args.depGraph or args.json:
+          print('Unsupported parameter combination')
