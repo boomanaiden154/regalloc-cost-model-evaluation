@@ -27,12 +27,19 @@ def getBBAddrMap(inputFile):
         out, err = ReadElfProcess.communicate()
         return json.loads(out.decode("UTF-8"))
 
-def getBasicBlocks(inputFile):
+def getBasicBlocks(inputFile, functionName):
     bbaddrmap = getBBAddrMap(inputFile)
+
+    functionIndex = 0
+    for index, function in enumerate(bbaddrmap[0]["BBAddrMap"]):
+        if function["Function"]["Name"] == functionName:
+            functionIndex = index
+            break
+
     
-    functionStart = bbaddrmap[0]["BBAddrMap"][0]["Function"]["At"]
+    functionStart = bbaddrmap[0]["BBAddrMap"][functionIndex]["Function"]["At"]
     BasicBlocks = []
-    for bbEntry in bbaddrmap[0]["BBAddrMap"][0]["Function"]["BB entries"]:
+    for bbEntry in bbaddrmap[0]["BBAddrMap"][functionIndex]["Function"]["BB entries"]:
         newBasicBlock = {
             "offset": bbEntry["Offset"],
             "id": bbEntry["ID"],
@@ -50,15 +57,14 @@ def getBasicBlocks(inputFile):
     return BasicBlocks
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("usage: python3 get_bbs.py <executable path>")
+    if len(sys.argv) != 3:
+        print("usage: python3 get_bbs.py <executable path> <function name>")
         sys.exit(1)
     
     ExecutablePath = sys.argv[1]
-    bbaddrmap = getBBAddrMap(ExecutablePath)
-    
-    functionStart = bbaddrmap[0]["BBAddrMap"][0]["Function"]["At"]
-    BasicBlocks = getBasicBlocks(ExecutablePath)
+    FunctionName = sys.argv[2]
+
+    BasicBlocks = getBasicBlocks(ExecutablePath, FunctionName)
 
     # remove textual asm for display
     for basicBlock in BasicBlocks:
