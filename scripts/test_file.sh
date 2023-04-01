@@ -6,9 +6,6 @@ set -e
 processExecutable () {
     /regalloc-testing/scripts/pgo_compile.sh $1 test-$2
     /regalloc-testing/scripts/benchmark.sh ./test-$2 test-$2.benchmark.txt $3
-    python3 /regalloc-testing/scripts/regalloc_score_parsing.py test-$2.regallocscoring.txt call-counts.txt >> results.txt
-    echo -n "," >> results.txt
-    python3 /regalloc-testing/scripts/benchmark_average.py test-$2.benchmark.txt >> results.txt
 }
 
 count=31
