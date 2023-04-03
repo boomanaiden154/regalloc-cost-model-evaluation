@@ -12,7 +12,7 @@ __attribute__((always_inline))
 #else
 __attribute__((noinline))
 #endif
-void sixteenWideOperation(long* inputArray, size_t arraySize) {
+static void sixteenWideOperation(long* inputArray, size_t arraySize) {
   long a = 0;
   long b = 0;
   long c = 0;
@@ -69,7 +69,7 @@ __attribute__((always_inline))
 #else
 __attribute__((noinline))
 #endif
-void leftShift(long* inputArray, size_t arraySize) {
+static void leftShift(long* inputArray, size_t arraySize) {
   long tempValue = inputArray[0];
   for(int i = 1; i < arraySize; ++i) {
     long tempValue2 = inputArray[i];
