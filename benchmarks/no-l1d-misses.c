@@ -5,6 +5,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <stdint.h>
+
+#ifdef CALL_COUNT_INSTRUMENTATION
+static int64_t sixteenWideOperationCalls = 0;
+static int64_t leftShiftCalls = 0;
+static int64_t mainCalls = 1;
+#endif
 
 // Ths function assumes that arraySize is a multiple of 8
 #ifdef ALWAYS_INLINE
@@ -13,6 +20,9 @@ __attribute__((always_inline))
 __attribute__((noinline))
 #endif
 static void sixteenWideOperation(long* inputArray, size_t arraySize) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+  ++sixteenWideOperationCalls;
+#endif
   long a = 0;
   long b = 0;
   long c = 0;
@@ -70,6 +80,9 @@ __attribute__((always_inline))
 __attribute__((noinline))
 #endif
 static void leftShift(long* inputArray, size_t arraySize) {
+#ifdef CALL_COUNT_INSTRUMENTATION
+  ++leftShiftCalls;
+#endif
   long tempValue = inputArray[0];
   for(int i = 1; i < arraySize; ++i) {
     long tempValue2 = inputArray[i];
@@ -81,16 +94,22 @@ static void leftShift(long* inputArray, size_t arraySize) {
 
 int main() {
   int pageSize = getpagesize();
-  printf("current page size:%d\n", pageSize);
   size_t arraySize = (1 * pageSize) / sizeof(long);
   long* longArray = (long*)mmap(NULL, arraySize * sizeof(long), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  printf("allocated memory is at:%ld\n", (long)longArray);
-  printf("array size:%ld\n", arraySize);
   memset(longArray, 5, arraySize);
   for(int i = 0; i < 2500000; ++i) {
       sixteenWideOperation(longArray, arraySize);
       leftShift(longArray, arraySize);
   }
   munmap(longArray, arraySize * sizeof(long));
+#ifdef CALL_COUNT_INSTRUMENTATION
+  printf("sixteenWideOperation,%ld\n", sixteenWideOperationCalls);
+  printf("leftShift,%ld\n", leftShiftCalls);
+  printf("main,%ld\n", mainCalls);
+#else
+  printf("current page size:%d\n", pageSize);
+  printf("allocated memory is at:%ld\n", (long)longArray);
+  printf("array size:%ld\n", arraySize);
+#endif
   return 0;
 }
