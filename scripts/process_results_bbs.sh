@@ -13,6 +13,6 @@ for (( i=1; i<=$count; i++))
 do
     python3 /regalloc-testing/scripts/process_bbs.py test-$i test-$i.profiledump >> results_bbs.txt
     echo -n "," >> results_bbs.txt
-    python3 /regalloc-testing/scripts/benchmark_average.py test-$i.benchmark.txt >> results_bbs.txt
+    python3 /regalloc-testing/scripts/benchmark_average.py --input_file=test-$i.benchmark.txt >> results_bbs.txt
     echo "finished processing test-$i"
 done

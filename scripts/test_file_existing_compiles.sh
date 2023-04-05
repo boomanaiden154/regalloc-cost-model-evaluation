@@ -28,5 +28,5 @@ do
     cp $1/test-$i.regallocscoring.txt ./
     python3 /regalloc-testing/scripts/regalloc_score_parsing.py test-$i.regallocscoring.txt call-counts.txt >> results.txt
     echo -n "," >> results.txt
-    python3 /regalloc-testing/scripts/benchmark_average.py test-$i.benchmark.txt >> results.txt
+    python3 /regalloc-testing/scripts/benchmark_average.py --input_file=test-$i.benchmark.txt >> results.txt
 done
