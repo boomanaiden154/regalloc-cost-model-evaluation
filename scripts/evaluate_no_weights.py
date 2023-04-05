@@ -56,4 +56,4 @@ if __name__ == '__main__':
         polarityCorrect, averageDifference, tau = evaluateModel(parsedResults)
         print(f'polarity correct:{polarityCorrect}/{len(parsedResults) - 1}')
         print(f'average difference:{averageDifference}')
-        print(f'kendall\'s tau:{tau.statistic}')
+        print(f'kendall\'s tau:{tau}')
