@@ -62,16 +62,7 @@ def evaluateModel(scoreTimePairs):
     for scoreTimePair in scoreTimePairs[1:]:
         rawScores.append(scoreTimePair[0])
         rawTimes.append(scoreTimePair[1])
-    rawScores.sort()
-    rawTimes.sort()
-    # TODO(boomanaiden154): following algorithm is extremely inefficient.
-    # Refactor it to something better if more scalability is required.
-    scoreRankings = []
-    timeRankings = []
-    for scoreTimePair in scoreTimePairs[1:]:
-        scoreRankings.append(rawScores.index(scoreTimePair[0]))
-        timeRankings.append(rawTimes.index(scoreTimePair[1]))
-    tau = scipy.stats.kendalltau(scoreRankings, timeRankings)
+    tau = scipy.stats.kendalltau(rawScores, rawTimes, variant='c')
     polarityCorrectSortedArray = getPolarityCorrectSortedArray(polarityCorrectVector, rawTimes)
     outputMap = {
         "polarityCorrect": polarityCorrect,
