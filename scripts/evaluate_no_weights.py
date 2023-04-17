@@ -11,10 +11,11 @@ from absl import app, flags
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("input_file", None, "The path to the input file")
-flags.DEFINE_enum("output", "default", ["default", "polarityvector"], "The output type")
+if __name__ == "__main__":
+    flags.DEFINE_string("input_file", None, "The path to the input file")
+    flags.DEFINE_enum("output", "default", ["default", "polarityvector"], "The output type")
 
-flags.mark_flag_as_required("input_file")
+    flags.mark_flag_as_required("input_file")
 
 def getDifferences(scoreTimePairs):
     baselineResult = scoreTimePairs[0]

@@ -53,9 +53,9 @@ def main(_):
         print(f"Multivariable regression intercept:{regression.intercept_}")
         print(f"Normalized coefficients:{normalizedCoefficients}")
         print(f"Unadjusted R^2 value:{regression.score(X,y)}")
-        print(f"Post regression polarity correct:{newModelEvaluated[\"polarityCorrect\"]}")
-        print(f"Post regression average difference:{newModelEvaluated[\"averageDifference\"]}")
-        print(f"Post regression kendall's tau:{newModelEvaluated[\"tau\"]}")
+        print(f"Post regression polarity correct:{newModelEvaluated['polarityCorrect']}")
+        print(f"Post regression average difference:{newModelEvaluated['averageDifference']}")
+        print(f"Post regression kendall's tau:{newModelEvaluated['tau']}")
     elif FLAGS.output == "coefficients":
         print(f"{coefficients[0]} {coefficients[1]} {coefficients[2]} {coefficients[3]} {coefficients[4]}")
     elif FLAGS.output == "intercept":
@@ -72,9 +72,9 @@ def main(_):
     elif FLAGS.output == "r2":
         print(f"{regression.score(X,y)}")
     elif FLAGS.output == "posregpol":
-        print(f"{newModelEvaluated[\"polarityCorrect\"]}")
+        print(f"{newModelEvaluated['polarityCorrect']}")
     elif FLAGS.output == "posregdif":
-        print(f"{newModelEvaluated[\"averageDifference\"]}")
+        print(f"{newModelEvaluated['averageDifference']}")
 
 if __name__ == "__main__":
     app.run(main)

@@ -19,7 +19,7 @@ default settings and environment set up appropriately.
 ```
 polarity correct:485/929
 average difference:0.031422619831870884
-kendall's tau:0.4989523390675196
+kendall's tau:0.07458945751128858
 ```
 
 ### Performance of linear model after new regression
@@ -32,7 +32,7 @@ Normalized coefficients:[1.0, 2.8679913702792548, 1.5765908198764038, 0.94090309
 Unadjusted R^2 value:0.01446755399303512
 Post regression polarity correct:521
 Post regression average difference:0.025297999740946382
-Post regression kendall's tau:0.49743997544590784
+Post regression kendall's tau:0.09770967852193585
 ```
 
 ### Performance of basic block cost model
@@ -40,7 +40,7 @@ Post regression kendall's tau:0.49743997544590784
 ```
 polarity correct:668/929
 average difference:0.02650165495508575
-kendall's tau:0.5654872891144503
+kendall's tau:-0.0019314191481557405
 ```
 
 ### Conclusions
