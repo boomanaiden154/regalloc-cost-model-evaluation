@@ -7,6 +7,15 @@ import operator
 
 import scipy.stats
 
+from absl import app, flags
+
+FLAGS = flags.FLAGS
+
+flags.DEFINE_string("input_file", None, "The path to the input file")
+flags.DEFINE_enum("output", "default", ["default", "polarityvector"], "The output type")
+
+flags.mark_flag_as_required("input_file")
+
 def getDifferences(scoreTimePairs):
     baselineResult = scoreTimePairs[0]
     differences = []
@@ -53,6 +62,8 @@ def evaluateModel(scoreTimePairs):
     for scoreTimePair in scoreTimePairs[1:]:
         rawScores.append(scoreTimePair[0])
         rawTimes.append(scoreTimePair[1])
+    rawScores.sort()
+    rawTimes.sort()
     # TODO(boomanaiden154): following algorithm is extremely inefficient.
     # Refactor it to something better if more scalability is required.
     scoreRankings = []
@@ -70,10 +81,8 @@ def evaluateModel(scoreTimePairs):
     }
     return outputMap
 
-if __name__ == '__main__':
-    if(len(sys.argv) != 2):
-        print("Usage is python3 evaluate_no_weigts.py <input file>")
-    with open(sys.argv[1]) as resultsFile:
+def main(_):
+    with open(FLAGS.input_file) as resultsFile:
         rawResults = resultsFile.readlines()
         parsedResults = []
         for rawResult in rawResults:
@@ -82,6 +91,13 @@ if __name__ == '__main__':
             time = float(components[1])
             parsedResults.append((score,time))
         output = evaluateModel(parsedResults)
-        print(f'polarity correct:{output["polarityCorrect"]}/{len(parsedResults) - 1}')
-        print(f'average difference:{output["averageDifference"]}')
-        print(f'kendall\'s tau:{output["tau"]}')
+        if FLAGS.output == "default":
+            print(f'polarity correct:{output["polarityCorrect"]}/{len(parsedResults) - 1}')
+            print(f'average difference:{output["averageDifference"]}')
+            print(f'kendall\'s tau:{output["tau"]}')
+        elif FLAGS.output == "polarityvector":
+            for polarityTuple in output["polarityCorrectSortedArray"]:
+                print(f"{polarityTuple[0]},{polarityTuple[1]}")
+
+if __name__ == "__main__":
+    app.run(main)
