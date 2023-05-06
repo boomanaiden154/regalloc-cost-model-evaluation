@@ -43,6 +43,24 @@ average difference:0.02650165495508575
 kendall's tau:-0.0019314191481557405
 ```
 
+## Benchmarks with no L1D misses
+
+### Performance of BB cost model
+
+```
+polarity correct:685/929
+average difference:0.045656520277584156
+kendall's tau:0.548086175406604
+```
+
+### Performance of linear cost model
+
+```
+polarity correct:627/929
+average difference:0.06883654577320614
+kendall's tau:KendalltauResult(correlation=0.5261606659159035, pvalue=3.5310518018951294e-125)
+```
+
 ### Conclusions
 
 It seems like the basic block cost models are definitely a somewhat promising
