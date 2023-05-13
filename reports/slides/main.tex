@@ -1,0 +1,207 @@
+\documentclass[light]{ucdbeamer}
+
+\usepackage{pdfpages}
+\usepackage{tikz}
+\setbeameroption{hide notes}
+
+\setdepartment{College of Snat}
+\institute[UC Davis]{University of California, Davis}
+\author{ParticleSwarmOptimization}
+\title{Not the actual title, can't make it that easy}
+\date{\today}
+
+\usetikzlibrary{shapes.geometric, arrows}
+
+\begin{document}
+
+\definecolor{ucdblue1}{RGB}{29,71,118}
+\definecolor{ucdgreen1}{RGB}{38,96,65}
+\definecolor{ucdorange1}{RGB}{241,138,0}
+
+\tikzstyle{process} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, text=white, fill=ucdblue1]
+\tikzstyle{inblock} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, text=white, fill=ucdgreen1]
+\tikzstyle{outblock} = [rectangle, rounded corners, minimum width=2cm, minimum height=1cm, text centered, text=white, fill=ucdorange1]
+
+{
+  \setbeamertemplate{navigation symbols}{}
+  \begin{frame}<article:0>[plain, noframenumbering]
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[at=(current page.center)] {
+        \includegraphics[
+                         width=\paperwidth, 
+                         height=\paperheight]
+                         {frontpage_figure}
+      };
+      \node[at=(current page.center), text=white, xshift=1cm] {
+        \Large <Fake Title>
+      };
+    \end{tikzpicture}
+  \end{frame}
+}
+    
+{ %title page
+\begin{frame}[plain]
+\maketitle
+\small
+\par\vskip0.5em
+{\footnotesize
+  \hspace*{0.2cm}
+  \begin{tabular}[t]{@{}l@{\hspace{3pt}}p{.5\textwidth}@{}}
+  Working under <guy at Google>, <other guy at Google>
+  \end{tabular}
+}
+\end{frame}
+}
+
+\begin{frame}[plain]
+\frametitle{Why Fast, Accurate, and Static Cost Models?}
+\begin{itemize}
+  \item Benchmarking is expensive and noisy.
+  \item Cost models might be called millions of times during training.
+  \item Having deterministic results can make ML training easier.
+  \item The better the accuracy, the more "deterministic" model training can be.
+  \item Higher accuracy leads to better deployed models.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Current Linear Model}
+Currently, we're using a linear model, implemented in \texttt{/fake/file/path}
+\begin{itemize}
+  \item Counts the number of a couple memory specific instructions, weights by latencies and MBB frequency.
+  \item Does produce some signal.
+  \item Leaves a lot to be desired in terms of "determinism" in training.
+  \item Still can produce performant heuristic-replacing models. One is currently deployed in Google Search.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Evaluating Cost Models - Process}
+
+\begin{tikzpicture}[node distance=1.5cm]
+\node (sourcecode) [inblock] {Source Code};
+\node (clangllvm) [process, right of=sourcecode, xshift=1cm] {Clang/LLVM};
+\node (pgodata) [inblock, above of=clangllvm] {PGO Data};
+\node (regallocfuzz) [inblock, below of=clangllvm] {Fuzzed Regalloc Eviction Decisions};
+\node (scoreinfo) [outblock, right of=clangllvm, xshift=2.5cm, yshift=0.75cm] {Score};
+\node (executable) [outblock, right of=clangllvm, xshift=2.5cm, yshift=-0.75cm] {Executable};
+\node (benchmarking) [process, right of=executable, xshift=1.25cm] {Benchmarking};
+\node (evaluation) [process, right of=clangllvm, xshift=8cm] {Evaluation};
+\draw [->] (sourcecode) -- (clangllvm);
+\draw [->] (pgodata) -- (clangllvm);
+\draw [->] (regallocfuzz) -- (clangllvm);
+\draw [->] (clangllvm) -- (scoreinfo);
+\draw [->] (clangllvm) -- (executable);
+\draw [->] (executable) -- (benchmarking);
+\draw [->] (scoreinfo) -- (evaluation);
+\draw [->] (benchmarking) -- (evaluation);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Evaluating Cost Models - Metrics}
+\begin{itemize}
+  \item Polarity correct - polarity prediction around an arbitrary pivot point.
+  \item Mean difference
+  \item Ordering (tau coefficient)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Linear Model Performance}
+\begin{itemize}
+  \item Does not perform particularly well.
+  \item Polarity correct metric hovers around the 50-60\% mark.
+  \item Average difference is a little under 5\%.
+  \item Tau coefficient for standard benchmarks hovers around 0.
+  \item Fitting new weights greatly improves performance but offers no generalization.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Using SOA BB Cost Models}
+\begin{itemize}
+  \item New BB cost models are quite accurate\footcite{abel_uica_2022} and reasonably fast.
+  \item Models many more properties than the simple linear model (like instruction ordering).
+  \item Learned models are also highly performant\footcite{sykora_granite_2022}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{BB Cost Models - Process}
+
+\begin{tikzpicture}[node distance=1.5cm]
+\node (sourcecode) [inblock] {Source Code};
+\node (clangllvm) [process, right of=sourcecode, xshift=1cm] {Clang/LLVM};
+\node (pgodata) [inblock, above of=clangllvm] {PGO Data};
+\node (executable) [outblock, right of=clangllvm, xshift=1.5cm, yshift=-0.75cm] {Executable};
+\node (bbfreq) [outblock, right of=clangllvm, xshift=1.5cm, yshift=0.75cm] {BB Frequencies};
+\node (bbcostmodel) [process, right of=clangllvm, xshift=4.5cm] {BB Cost Model};
+\draw [->] (sourcecode) -- (clangllvm);
+\draw [->] (pgodata) -- (clangllvm);
+\draw [->] (clangllvm) -- (bbfreq);
+\draw [->] (clangllvm) -- (executable);
+\draw [->] (executable) -- (bbcostmodel);
+\draw [->] (bbfreq) -- (bbcostmodel);
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Performance of SOA BB Cost Models}
+\begin{itemize}
+  \item Significantly better than the linear model on all metrics.
+  \item Percent error drops by up to 50\%.
+  \item Polarity accuracy increases even in hard to model cases.
+  \item Actual accuracy of ordering is about the same.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Limitations of this Work}
+\begin{itemize}
+  \item The current evaluation framework only works on small benchmarks.
+  \item Only a small variety of benchmarks have been tested.
+  \item Achieving ideal execution conditions while running non-trivial benchmarks is difficult.
+  \item Only fuzzed part of the register allocator.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Where/why do these models fail}
+\begin{itemize}
+  \item These models all assume ideal execution environments.
+  \item Ideal conditions are rare and non-ideal conditions can change results by multiple orders of magnitude.
+  \item Presence of L1 cache misses significantly impacts the performance of the linear model.
+  \item Anything beyond the stream of instructions in a BB is not modelled (i.e., branching, function call overhead).
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Future Directions - Better Learned BB Models}
+\begin{itemize}
+  \item Learned cost models are more adaptable to new (micro)architectures.
+  \item Ground truth data has a lot of collection nuances. \footcite{abel_uica_2022}\footcite{chen_bhive_2019}
+  \item Should be landing changes soon in \texttt{blah-blah-tool-hahaegg} to help alleviate this problem.
+  \item Assembly fuzzing might alleviate models learning false patterns\footcite{ritter_anica_2022}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{More Profile Information}
+\begin{itemize}
+  \item Modelling non-ideal execution completely statically is essentially impossible.
+  \item Collecting profile information and tagging specific instructions should massively increase accuracy.
+  \item Building data collection pipelines and integrating this data into LCMs is an open scientific/engineering problem.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Artifacts and Q\&A}
+\begin{itemize}
+  \item Artifacts available at \url{https://thisisafakeurl.com}
+  \item Questions?
+\end{itemize}
+\end{frame}
+
+\end{document}
