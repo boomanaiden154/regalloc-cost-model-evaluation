@@ -4,10 +4,10 @@
 \usepackage{tikz}
 \setbeameroption{hide notes}
 
-\setdepartment{College of Snat}
+\setdepartment{College of Engineering}
 \institute[UC Davis]{University of California, Davis}
-\author{ParticleSwarmOptimization}
-\title{Not the actual title, can't make it that easy}
+\author{Aiden Grossman}
+\title{Cost Modelling for Register Allocation and Beyond}
 \date{\today}
 
 \usetikzlibrary{shapes.geometric, arrows}
@@ -47,7 +47,7 @@
 {\footnotesize
   \hspace*{0.2cm}
   \begin{tabular}[t]{@{}l@{\hspace{3pt}}p{.5\textwidth}@{}}
-  Working under <guy at Google>, <other guy at Google>
+  Working under Mircea Trofin and Ondrej Sykora.
   \end{tabular}
 }
 \end{frame}
@@ -66,7 +66,7 @@
 
 \begin{frame}[plain]
 \frametitle{Current Linear Model}
-Currently, we're using a linear model, implemented in \texttt{/fake/file/path}
+Currently, we're using a linear model, implemented in \texttt{llvm/lib/CodeGen/RegAllocScore.cpp}
 \begin{itemize}
   \item Counts the number of a couple memory specific instructions, weights by latencies and MBB frequency.
   \item Does produce some signal.
@@ -199,9 +199,10 @@ Currently, we're using a linear model, implemented in \texttt{/fake/file/path}
 \begin{frame}[plain]
 \frametitle{Artifacts and Q\&A}
 \begin{itemize}
-  \item Artifacts available at \url{https://thisisafakeurl.com}
+  \item Artifacts available at \url{https://github.com/boomanaiden154/regalloc-cost-model-evaluation}
   \item Questions?
 \end{itemize}
 \end{frame}
 
 \end{document}
+
